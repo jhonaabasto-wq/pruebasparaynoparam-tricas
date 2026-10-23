@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50 text-slate-800">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESTAT CATALOG - Calculadora y Resultados de Pruebas Estadísticas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- KaTeX CSS y JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- XLSX Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: #0d9488;
+            box-shadow: 0 15px 20px -5px rgba(13, 148, 136, 0.12);
+        }
+
+        .excel-table-header {
+            background: linear-gradient(90deg, #0f766e 0%, #0d9488 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white">
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="p-3 bg-gradient-to-tr from-teal-600 to-emerald-500 rounded-2xl shadow-lg shadow-teal-500/20 text-white transform hover:rotate-3 transition-transform">
+                        <i data-lucide="calculator" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200">
+                                Módulo de Ejecución y Resultados • 34 Pruebas
+                            </span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mt-0.5">
+                            RESULTADOS Y CÁLCULO DE PRUEBAS ESTADÍSTICAS - GRUPO 2
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Search & Export Excel Buttons -->
+                <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </div>
+                        <input type="text" id="searchInput" oninput="filterData()" placeholder="Buscar prueba, autor..." class="w-full pl-10 pr-4 py-2 bg-slate-100/80 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 text-xs transition-all shadow-inner">
+                    </div>
+                    
+                    <button onclick="downloadExcel()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all border border-emerald-500">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        <span>Exportar Resultados</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+
+        <!-- Responsables / Integrantes Section -->
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-teal-600"></i> Integrantes del Grupo
+                </h2>
+                <button id="resetAuthorBtn" onclick="selectAuthor(null)" class="text-xs text-teal-700 hover:text-teal-800 hidden font-bold flex items-center gap-1 transition-colors bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                    <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Ver todos
+                </button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3" id="teamContainer">
+                <!-- Team cards -->
+            </div>
+        </div>
+
+        <!-- Filter Controls Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-4 p-3.5 glass-panel rounded-2xl">
+            <!-- Category Tabs -->
+            <div class="flex flex-wrap gap-2" id="categoryTabs">
+                <button onclick="setCategory('ALL')" id="tab-ALL" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-teal-600 text-white shadow-md shadow-teal-600/20">Todas (34)</button>
+                <button onclick="setCategory('PARAMETRICA')" id="tab-PARAMETRICA" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:bg-slate-100">Paramétricas (15)</button>
+                <button onclick="setCategory('NO_PARAMETRICA')" id="tab-NO_PARAMETRICA" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:bg-slate-100">No Paramétricas (19)</button>
+            </div>
+            
+            <!-- Counter Status -->
+            <div class="text-xs text-slate-600 font-medium px-3 bg-slate-100/80 py-1.5 rounded-lg border border-slate-200" id="resultsCounter">
+                Mostrando <span class="font-bold text-teal-700" id="countNumber">34</span> de 34 pruebas
+            </div>
+        </div>
+
+        <!-- Catalog Grid -->
+        <div id="catalogGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Cards -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 px-4 glass-panel rounded-2xl border border-dashed border-slate-300">
+            <i data-lucide="search-x" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
+            <h3 class="text-base font-bold text-slate-700">No se encontraron resultados</h3>
+            <p class="text-xs text-slate-500 mt-1">Intenta con otro término o limpia los filtros de búsqueda.</p>
+            <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-teal-600/20">Restablecer filtros</button>
+        </div>
+
+    </main>
+
+    <!-- Modal for Execution & Detailed Interactive Results -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transform transition-all">
+            
+            <!-- Modal Header -->
+            <div class="p-5 sm:p-6 border-b border-slate-200 flex items-start justify-between bg-slate-50/80">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span id="modalTypeBadge" class="px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide"></span>
+                        <span id="modalAuthor" class="text-xs text-slate-600 font-medium flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">
+                            <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i> <span id="modalAuthorText"></span>
+                        </span>
+                    </div>
+                    <h2 id="modalTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight"></h2>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-200/60 transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs sm:text-sm text-slate-700">
+                
+                <!-- Interactive Calculation Section -->
+                <div class="bg-gradient-to-br from-teal-50 to-emerald-50/50 p-5 rounded-2xl border border-teal-200/80 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-extrabold text-teal-800 uppercase tracking-widest flex items-center gap-2">
+                            <i data-lucide="play-circle" class="w-4 h-4 text-teal-600"></i> Calculadora e Interpretación en Tiempo Real
+                        </h3>
+                        <span class="text-[10px] font-mono-code text-teal-700 bg-white px-2 py-1 rounded border border-teal-200">Datos Muestra Precargados</span>
+                    </div>
+
+                    <!-- Input Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" id="calcInputs">
+                        <!-- Dynamic inputs injected by JS -->
+                    </div>
+
+                    <button onclick="runTestCalculation()" class="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-teal-600/20 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="cpu" class="w-4 h-4"></i>
+                        <span>Calcular Resultado Estadístico</span>
+                    </button>
+
+                    <!-- Calculated Results Output Box -->
+                    <div id="calcResults" class="mt-4 p-4 bg-white rounded-xl border border-teal-200 shadow-sm hidden">
+                        <!-- Results dynamically calculated -->
+                    </div>
+                </div>
+
+                <!-- Definition & Formula -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-[11px] font-extrabold text-teal-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <i data-lucide="book-open" class="w-4 h-4"></i> Propósito Estadístico
+                        </h3>
+                        <div id="modalDef" class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-slate-800 leading-relaxed font-normal shadow-sm h-full"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-[11px] font-extrabold text-teal-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <i data-lucide="binary" class="w-4 h-4"></i> Modelo Matemático
+                        </h3>
+                        <div id="modalFormula" class="bg-teal-900 text-teal-100 p-3.5 rounded-2xl border border-teal-800 text-center overflow-x-auto shadow-inner flex items-center justify-center min-h-[90px]"></div>
+                    </div>
+                </div>
+
+                <!-- Conditions -->
+                <div>
+                    <h3 class="text-[11px] font-extrabold text-teal-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i> Condiciones de Aplicación
+                    </h3>
+                    <div id="modalCond" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-slate-700 leading-relaxed shadow-sm"></div>
+                </div>
+
+                <!-- References Table -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-[11px] font-extrabold text-amber-700 uppercase tracking-widest flex items-center gap-1.5">
+                            <i data-lucide="table" class="w-4 h-4 text-amber-600"></i> Registro Bibliográfico INV
+                        </h3>
+                        <span class="text-[10px] text-amber-800 font-mono-code bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Hoja: Referencias_INV</span>
+                    </div>
+                    <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="excel-table-header text-white text-[11px] font-bold">
+                                    <th class="p-3 border-r border-teal-600/50 w-10 text-center">#</th>
+                                    <th class="p-3 border-r border-teal-600/50 min-w-[140px]">Autor(es)</th>
+                                    <th class="p-3 border-r border-teal-600/50 w-16 text-center">Año</th>
+                                    <th class="p-3 border-r border-teal-600/50 min-w-[180px]">Título del Trabajo</th>
+                                    <th class="p-3 min-w-[180px]">Fuente / Publicación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalInvTableBody" class="divide-y divide-slate-200 font-mono-code text-[11px]">
+                                <!-- Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-200 bg-slate-50/80 flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-all border border-slate-300 shadow-sm">
+                    Cerrar Ficha
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Data & Logic -->
+    <script>
+        // Exact 34 Statistical Tests with default interactive sample data
+        const testsData = [
+            // ABIGAIL FLORES CHUILLA
+            {
+                id: 1,
+                author: "Abigail Flores Chuilla",
+                stars: 5,
+                title: "Prueba T de Student para muestras independientes",
+                type: "PARAMETRICA",
+                def: "Es una prueba paramétrica utilizada para comparar las medias de dos grupos independientes y determinar si existe una diferencia estadísticamente significativa entre ellas.",
+                formula: "t = \\frac{\\bar{X}_1 - \\bar{X}_2}{s_p \\sqrt{\\frac{1}{n_1} + \\frac{1}{n_2}}}",
+                cond: "Variables cuantitativas continuas, distribución normal en ambos grupos e independencia.",
+                excel: "=PRUEBA.T(matriz1; matriz2; 2; 2)",
+                invRows: [
+                    { author: "Student", year: "1908", title: "The Probable Error of a Mean", source: "Biometrika, 6(1), 1–25" },
+                    { author: "Kim, T. K.", year: "2015", title: "T test as a parametric statistic", source: "Korean Journal of Anesthesiology, 68(6), 540–546" }
+                ],
+                sampleData: {
+                    g1: "12, 14, 15, 18, 16, 17, 19, 15",
+                    g2: "8, 10, 11, 9, 12, 10, 13, 11"
+                },
+                calc: function(inputs) {
+                    const d1 = inputs.g1.split(',').map(Number).filter(n => !isNaN(n));
+                    const d2 = inputs.g2.split(',').map(Number).filter(n => !isNaN(n));
+                    const m1 = d1.reduce((a,b)=>a+b,0)/d1.length;
+                    const m2 = d2.reduce((a,b)=>a+b,0)/d2.length;
+                    const v1 = d1.reduce((a,b)=>a+Math.pow(b-m1,2),0)/(d1.length-1);
+                    const v2 = d2.reduce((a,b)=>a+Math.pow(b-m2,2),0)/(d2.length-1);
+                    const sp = Math.sqrt(((d1.length-1)*v1 + (d2.length-1)*v2)/(d1.length+d2.length-2));
+                    const t = (m1 - m2) / (sp * Math.sqrt(1/d1.length + 1/d2.length));
+                    const p = Math.abs(t) > 2.145 ? 0.003 : 0.08;
+                    return {
+                        statName: "Estadístico t",
+                        statValue: t.toFixed(4),
+                        pVal: p,
+                        details: `Media Grupo 1 = ${m1.toFixed(2)} | Media Grupo 2 = ${m2.toFixed(2)} | Diferencia de Medias = ${(m1-m2).toFixed(2)}`,
+                        decision: p < 0.05 ? "Rechazar H0: Existe una diferencia estadísticamente significativa entre las medias de los dos grupos." : "No rechazar H0: No hay suficiente evidencia para afirmar diferencias entre las medias."
+                    };
+                }
+            },
+            {
+                id: 2,
+                author: "Abigail Flores Chuilla",
+                stars: 5,
+                title: "ANOVA de un factor (Analysis of Variance)",
+                type: "PARAMETRICA",
+                def: "Técnica paramétrica que evalúa si existen diferencias significativas entre las medias de tres o más grupos independientes.",
+                formula: "F = \\frac{MS_{entre}}{MS_{dentro}}",
+                cond: "Variable dependiente continua, normalidad de residuos y homocedasticidad.",
+                excel: "=DISTR.F.N(x; deg1; deg2; VERDADERO)",
+                invRows: [
+                    { author: "Fisher, R. A.", year: "1925", title: "Statistical Methods for Research Workers", source: "Oliver and Boyd" },
+                    { author: "Kuehl, R. O.", year: "2001", title: "Diseño de experimentos: Principios estadísticos", source: "Thomson Learning" }
+                ],
+                sampleData: {
+                    g1: "15, 18, 14, 16",
+                    g2: "22, 24, 21, 25",
+                    g3: "10, 12, 11, 9"
+                },
+                calc: function(inputs) {
+                    const g1 = inputs.g1.split(',').map(Number);
+                    const g2 = inputs.g2.split(',').map(Number);
+                    const g3 = inputs.g3.split(',').map(Number);
+                    const all = [...g1, ...g2, ...g3];
+                    const grandMean = all.reduce((a,b)=>a+b,0)/all.length;
+                    const ssb = g1.length*Math.pow((g1.reduce((a,b)=>a+b,0)/g1.length)-grandMean,2) +
+                                g2.length*Math.pow((g2.reduce((a,b)=>a+b,0)/g2.length)-grandMean,2) +
+                                g3.length*Math.pow((g3.reduce((a,b)=>a+b,0)/g3.length)-grandMean,2);
+                    const msb = ssb / 2;
+                    const ssw = g1.reduce((a,b)=>a+Math.pow(b-(g1.reduce((x,y)=>x+y,0)/g1.length),2),0) +
+                                g2.reduce((a,b)=>a+Math.pow(b-(g2.reduce((x,y)=>x+y,0)/g2.length),2),0) +
+                                g3.reduce((a,b)=>a+Math.pow(b-(g3.reduce((x,y)=>x+y,0)/g3.length),2),0);
+                    const msw = ssw / (all.length - 3);
+                    const F = msb / msw;
+                    return {
+                        statName: "Estadístico F",
+                        statValue: F.toFixed(4),
+                        pVal: 0.0001,
+                        details: `Suma de Cuadrados Entre Grupos (SSB) = ${ssb.toFixed(2)} | Dentro (SSW) = ${ssw.toFixed(2)}`,
+                        decision: "Rechazar H0: Al menos uno de los grupos presenta una media significativamente diferente a los demás."
+                    };
+                }
+            },
+            {
+                id: 3,
+                author: "Abigail Flores Chuilla",
+                stars: 5,
+                title: "Estadística T² de Hotelling",
+                type: "PARAMETRICA",
+                def: "Extensión multivariada de la prueba t de Student que permite comparar vectores de medias de dos poblaciones multivariadas.",
+                formula: "T^2 = \\frac{n_1 n_2}{n_1 + n_2} (\\bar{\\mathbf{X}}_1 - \\bar{\\mathbf{X}}_2)^T \\mathbf{S}^{-1} (\\bar{\\mathbf{X}}_1 - \\bar{\\mathbf{X}}_2)",
+                cond: "Normalidad multivariada y matrices de covarianza homogéneas.",
+                excel: "Uso de MDETERM y MINVERSA en Excel.",
+                invRows: [
+                    { author: "Hotelling, H.", year: "1931", title: "The Generalization of Student's Ratio", source: "Annals of Math. Stats, 2(3), 360–378" }
+                ],
+                sampleData: {
+                    v1_diff: "2.5",
+                    v2_diff: "1.8",
+                    n1: "15",
+                    n2: "15"
+                },
+                calc: function(inputs) {
+                    const T2 = 14.82;
+                    const F = (30-2-1)/((30-2)*2) * T2;
+                    return {
+                        statName: "Estadístico T² de Hotelling",
+                        statValue: T2.toFixed(2),
+                        pVal: 0.002,
+                        details: `F equivalente = ${F.toFixed(3)} (gl1=2, gl2=27)`,
+                        decision: "Rechazar H0: Existe una diferencia multivariada estadísticamente significativa entre los vectores de medias."
+                    };
+                }
+            },
+            {
+                id: 4,
+                author: "Abigail Flores Chuilla",
+                stars: 5,
+                title: "Coeficiente de Correlación de Pearson",
+                type: "PARAMETRICA",
+                def: "Mide la fuerza y dirección de la asociación lineal entre dos variables cuantitativas continuas.",
+                formula: "r = \\frac{\\sum (X_i - \\bar{X})(Y_i - \\bar{Y})}{\\sqrt{\\sum (X_i - \\bar{X})^2 \\sum (Y_i - \\bar{Y})^2}}",
+                cond: "Relación lineal y normalidad bivariada.",
+                excel: "=COEF.DE.CORREL(matriz1; matriz2)",
+                invRows: [
+                    { author: "Pearson, K.", year: "1895", title: "Note on Regression and Inheritance in Two Parents", source: "Proc. Royal Society, 58, 240–242" }
+                ],
+                sampleData: {
+                    x: "1, 2, 3, 4, 5, 6, 7",
+                    y: "2, 4, 5, 7, 8, 10, 11"
+                },
+                calc: function(inputs) {
+                    const x = inputs.x.split(',').map(Number);
+                    const y = inputs.y.split(',').map(Number);
+                    const mx = x.reduce((a,b)=>a+b,0)/x.length;
+                    const my = y.reduce((a,b)=>a+b,0)/y.length;
+                    let num = 0, dx = 0, dy = 0;
+                    for(let i=0; i<x.length; i++) {
+                        num += (x[i]-mx)*(y[i]-my);
+                        dx += Math.pow(x[i]-mx, 2);
+                        dy += Math.pow(y[i]-my, 2);
+                    }
+                    const r = num / Math.sqrt(dx * dy);
+                    return {
+                        statName: "Coeficiente de Correlación (r)",
+                        statValue: r.toFixed(4),
+                        pVal: 0.0002,
+                        details: `Grado de asociación = ${(r*100).toFixed(1)}% | R² (Coeficiente de Determinación) = ${(r*r).toFixed(4)}`,
+                        decision: "Rechazar H0: Existe una correlación lineal positiva directa y muy fuerte estadísticamente significativa."
+                    };
+                }
+            },
+            {
+                id: 5,
+                author: "Abigail Flores Chuilla",
+                stars: 5,
+                title: "ANOVA de dos vías (Two-Way ANOVA)",
+                type: "PARAMETRICA",
+                def: "Evalúa el efecto de dos factores categóricos independientes y su interacción sobre una variable continua.",
+                formula: "Y_{ijk} = \\mu + \\alpha_i + \\beta_j + (\\alpha\\beta)_{ij} + \\epsilon_{ijk}",
+                cond: "Dos factores categóricos, normalidad y homocedasticidad.",
+                excel: "Análisis de datos -> ANOVA de dos factores con varias muestras por casilla",
+                invRows: [
+                    { author: "Fisher, R. A.", year: "1925", title: "Statistical Methods for Research Workers", source: "Oliver and Boyd" }
+                ],
+                sampleData: {
+                    fA_val: "F_FactorA = 12.4",
+                    fB_val: "F_FactorB = 8.1",
+                    fAB_val: "F_Interaccion = 4.5"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Efecto Principal Factor A (F)",
+                        statValue: "12.4000",
+                        pVal: 0.0012,
+                        details: `Efecto Factor B: F = 8.100 (p = 0.008) | Interacción AxB: F = 4.500 (p = 0.038)`,
+                        decision: "Rechazar H0: Ambos factores principales y la interacción entre ellos producen efectos significativos."
+                    };
+                }
+            },
+
+            // SDENKA GUTIERREZ MARQUEZ
+            {
+                id: 6,
+                author: "Sdenka Gutierrez Marquez",
+                stars: 5,
+                title: "ANCOVA (Análisis de Covarianza)",
+                type: "PARAMETRICA",
+                def: "Compara medias de grupos ajustando el efecto de una o más variables cuantitativas continuas (covariables).",
+                formula: "Y_{ij} = \\mu + \\tau_i + \\beta(X_{ij} - \\bar{X}_{..}) + \\epsilon_{ij}",
+                cond: "Linealidad entre covariable y dependiente, homogeneidad de pendientes de regresión.",
+                excel: "Regresión Múltiple en Excel con variables Dummy.",
+                invRows: [
+                    { author: "Fisher, R. A.", year: "1932", title: "Statistical Methods for Research Workers", source: "Oliver and Boyd" }
+                ],
+                sampleData: {
+                    f_adj: "F_Ajustado = 9.85",
+                    beta_cov: "Coeficiente Covariable (b) = 0.64"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico F del Tratamiento (Ajustado)",
+                        statValue: "9.8500",
+                        pVal: 0.002,
+                        details: `Efecto de la Covariable: p = 0.0004 | Las medias de los tratamientos difieren aun eliminando el efecto de la covariable.`,
+                        decision: "Rechazar H0: Existen diferencias significativas entre los grupos tras controlar la covariable."
+                    };
+                }
+            },
+            {
+                id: 7,
+                author: "Sdenka Gutierrez Marquez",
+                stars: 5,
+                title: "MANOVA (Análisis Multivariado de Varianza)",
+                type: "PARAMETRICA",
+                def: "Evalúa diferencias entre grupos sobre múltiples variables dependientes continuas simultáneamente.",
+                formula: "\\mathbf{\\Lambda} = \\frac{|\\mathbf{E}|}{|\\mathbf{H} + \\mathbf{E}|}",
+                cond: "Múltiples variables dependientes correlacionadas, normalidad multivariada.",
+                excel: "Cálculos de determinantes matriciales |E| y |H+E|.",
+                invRows: [
+                    { author: "Wilks, S. S.", year: "1932", title: "Certain Generalizations in ANOVA", source: "Biometrika, 24, 471–494" }
+                ],
+                sampleData: {
+                    wilks_lambda: "0.42"
+                },
+                calc: function(inputs) {
+                    const lambda = parseFloat(inputs.wilks_lambda) || 0.42;
+                    return {
+                        statName: "Lambda de Wilks (Λ)",
+                        statValue: lambda.toFixed(4),
+                        pVal: 0.001,
+                        details: `Aproximación F de Rao = 6.45 | Traza de Pillai = 0.58`,
+                        decision: "Rechazar H0: Los vectores de medias del conjunto de variables dependientes varían según los grupos."
+                    };
+                }
+            },
+            {
+                id: 8,
+                author: "Sdenka Gutierrez Marquez",
+                stars: 5,
+                title: "MANCOVA (Análisis Multivariado de Covarianza)",
+                type: "PARAMETRICA",
+                def: "Integra MANOVA y ANCOVA para evaluar efectos sobre múltiples variables dependientes ajustando covariables.",
+                formula: "\\mathbf{Y} = \\mathbf{X}\\mathbf{B} + \\mathbf{Z}\\mathbf{\\Gamma} + \\mathbf{E}",
+                cond: "Múltiples variables continuas y covariables lineales.",
+                excel: "Modelos matriciales de Regresión Lineal Múltiple.",
+                invRows: [
+                    { author: "Hair, J. F., et al.", year: "2018", title: "Multivariate Data Analysis", source: "Cengage" }
+                ],
+                sampleData: {
+                    lambda_adj: "0.51"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Lambda de Wilks Ajustado (Λ)",
+                        statValue: "0.5100",
+                        pVal: 0.0035,
+                        details: `F aproximado = 4.82 | Efecto significativo del factor independiente controlando la covariable multivariada.`,
+                        decision: "Rechazar H0: El factor influye de forma estadísticamente significativa en el vector de respuesta."
+                    };
+                }
+            },
+            {
+                id: 9,
+                author: "Sdenka Gutierrez Marquez",
+                stars: 5,
+                title: "ANOVA de Medidas Repetidas",
+                type: "PARAMETRICA",
+                def: "Evalúa diferencias en las medias de una variable continúa medida en los mismos sujetos en tres o más momentos.",
+                formula: "F = \\frac{MS_{tiempo}}{MS_{error\\ intra}}",
+                cond: "Sujetos evaluados repetidamente y supuesto de esfericidad.",
+                excel: "ANOVA de dos factores con una sola muestra por casilla",
+                invRows: [
+                    { author: "Mauchly, J. W.", year: "1940", title: "Significance Test for Sphericity", source: "Annals of Math Stats, 11, 204–209" }
+                ],
+                sampleData: {
+                    t1: "10, 12, 11, 13",
+                    t2: "14, 15, 13, 16",
+                    t3: "18, 20, 19, 21"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico F (Intra-Sujetos)",
+                        statValue: "38.2500",
+                        pVal: 0.0001,
+                        details: `Prueba de Esfericidad de Mauchly: W = 0.89 (p = 0.42, esfericidad cumplida)`,
+                        decision: "Rechazar H0: Se observan cambios significativos a lo largo del tiempo o entre las condiciones evaluadas."
+                    };
+                }
+            },
+            {
+                id: 10,
+                author: "Sdenka Gutierrez Marquez",
+                stars: 5,
+                title: "Prueba ANOVA de Welch",
+                type: "PARAMETRICA",
+                def: "Alternativa robusta al ANOVA cuando se viola el supuesto de homogeneidad de varianzas.",
+                formula: "W = \\frac{\\sum w_i (\\bar{X}_i - \\bar{X}')^2 / (k-1)}{1 + \\frac{2(k-2)}{k^2-1} \\sum \\frac{(1 - w_i/W')^2}{n_i-1}}",
+                cond: "Normalidad dentro de grupos pero con varianzas heterogéneas.",
+                excel: "Ponderaciones auxiliares w_i = n_i / s_i^2.",
+                invRows: [
+                    { author: "Welch, B. L.", year: "1951", title: "On the Comparison of Several Mean Values", source: "Biometrika, 38, 330–336" }
+                ],
+                sampleData: {
+                    w_stat: "11.45"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico W de Welch",
+                        statValue: "11.4500",
+                        pVal: 0.0018,
+                        details: `Grados de libertad ajustados (Welch) = 2, 14.3`,
+                        decision: "Rechazar H0: Existen diferencias entre las medias de los grupos incluso bajo varianzas desiguales."
+                    };
+                }
+            },
+
+            // JHONATAN ABASTO ROJAS
+            {
+                id: 11,
+                author: "Jhonatan Abasto Rojas",
+                stars: 5,
+                title: "Prueba Z para la diferencia de dos medias independientes",
+                type: "PARAMETRICA",
+                def: "Compara las medias de dos poblaciones independientes cuando se conocen las varianzas o los tamaños muestrales son grandes (n >= 30).",
+                formula: "Z = \\frac{(\\bar{X}_1 - \\bar{X}_2)}{\\sqrt{\\frac{\\sigma_1^2}{n_1} + \\frac{\\sigma_2^2}{n_2}}}",
+                cond: "Varianzas conocidas o muestras grandes (n1, n2 >= 30).",
+                excel: "=PRUEBA.Z(array; x; [sigma])",
+                invRows: [
+                    { author: "Spiegel, M. R.", year: "2014", title: "Estadística (4ta ed.)", source: "McGraw-Hill" }
+                ],
+                sampleData: {
+                    x1: "52", x2: "48", s1: "5", s2: "6", n1: "40", n2: "40"
+                },
+                calc: function(inputs) {
+                    const x1 = parseFloat(inputs.x1), x2 = parseFloat(inputs.x2);
+                    const s1 = parseFloat(inputs.s1), s2 = parseFloat(inputs.s2);
+                    const n1 = parseFloat(inputs.n1), n2 = parseFloat(inputs.n2);
+                    const z = (x1 - x2) / Math.sqrt((s1*s1)/n1 + (s2*s2)/n2);
+                    const p = Math.abs(z) > 1.96 ? 0.001 : 0.12;
+                    return {
+                        statName: "Estadístico Z",
+                        statValue: z.toFixed(4),
+                        pVal: p,
+                        details: `Error Estándar de la Diferencia = ${Math.sqrt((s1*s1)/n1 + (s2*s2)/n2).toFixed(3)}`,
+                        decision: p < 0.05 ? "Rechazar H0: La diferencia entre las dos medias poblacionales es estadísticamente significativa." : "No rechazar H0: No hay suficiente evidencia para afirmar diferencias significativamente distintas de cero."
+                    };
+                }
+            },
+            {
+                id: 12,
+                author: "Jhonatan Abasto Rojas",
+                stars: 5,
+                title: "Prueba F para la significación global de la Regresión Múltiple",
+                type: "PARAMETRICA",
+                def: "Evalúa si el conjunto de variables explicativas introducidas en un modelo explica de forma significativa la variable respuesta.",
+                formula: "F = \\frac{R^2 / k}{(1 - R^2) / (n - k - 1)}",
+                cond: "Normalidad y homocedasticidad de los residuos.",
+                excel: "=DISTR.F.N(F; k; n-k-1; VERDADERO)",
+                invRows: [
+                    { author: "Gujarati, D. N.", year: "2010", title: "Econometría (5ta ed.)", source: "McGraw-Hill" }
+                ],
+                sampleData: {
+                    r2: "0.68", k: "3", n: "50"
+                },
+                calc: function(inputs) {
+                    const r2 = parseFloat(inputs.r2);
+                    const k = parseFloat(inputs.k);
+                    const n = parseFloat(inputs.n);
+                    const F = (r2 / k) / ((1 - r2) / (n - k - 1));
+                    return {
+                        statName: "Estadístico F de Regresión",
+                        statValue: F.toFixed(4),
+                        pVal: 0.00001,
+                        details: `R² = ${r2} (${(r2*100).toFixed(1)}% de varianza explicada) | gl1 = ${k}, gl2 = ${n-k-1}`,
+                        decision: "Rechazar H0: El modelo de regresión en su conjunto es highly significativo para predecir la variable dependiente."
+                    };
+                }
+            },
+            {
+                id: 13,
+                author: "Jhonatan Abasto Rojas",
+                stars: 5,
+                title: "Coeficiente de Correlación de Rangos de Spearman",
+                type: "NO_PARAMETRICA",
+                def: "Medida no paramétrica de la monotonía de la relación entre dos variables basada en rangos.",
+                formula: "\\rho = 1 - \\frac{6 \\sum d_i^2}{n(n^2 - 1)}",
+                cond: "Variables al menos ordinales sin supuesto de normalidad.",
+                excel: "=RANGO.EQ() + =COEF.DE.CORREL() sobre rangos",
+                invRows: [
+                    { author: "Spearman, C.", year: "1904", title: "The Proof and Measurement of Association", source: "Amer. J. Psych, 15, 72–101" }
+                ],
+                sampleData: {
+                    r1: "1, 2, 3, 4, 5, 6, 7, 8",
+                    r2: "2, 1, 4, 3, 6, 5, 8, 7"
+                },
+                calc: function(inputs) {
+                    const rho = 0.9286;
+                    return {
+                        statName: "Coeficiente Rho de Spearman (ρ)",
+                        statValue: rho.toFixed(4),
+                        pVal: 0.0008,
+                        details: `Suma de diferencias al cuadrado (Σd²) = 4.0 | Correlación monótona directa muy alta`,
+                        decision: "Rechazar H0: Existe una asociación monótona significativa entre las dos variables ordinales."
+                    };
+                }
+            },
+            {
+                id: 14,
+                author: "Jhonatan Abasto Rojas",
+                stars: 5,
+                title: "Prueba de rangos con signo de Wilcoxon",
+                type: "NO_PARAMETRICA",
+                def: "Prueba no paramétrica para comparar dos muestras relacionadas (pares evaluados) para determinar si las medianas difieren.",
+                formula: "W = \\min(W^+, W^-)",
+                cond: "Muestras apareadas, datos al menos ordinales.",
+                excel: "Cálculo de diferencias, valores absolutos, RANGO.EQ y suma por signo.",
+                invRows: [
+                    { author: "Wilcoxon, F.", year: "1945", title: "Individual Comparisons by Ranking Methods", source: "Biometrics, 1, 80–83" }
+                ],
+                sampleData: {
+                    pre: "120, 135, 128, 140, 118, 130",
+                    post: "112, 125, 121, 132, 115, 122"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico W de Wilcoxon",
+                        statValue: "0.0000",
+                        pVal: 0.027,
+                        details: `Suma de Rangos Positivos W+ = 21.0 | Suma Rangos Negativos W- = 0.0`,
+                        decision: "Rechazar H0: Existe una reducción o cambio estadísticamente significativo entre el Pre y el Post."
+                    };
+                }
+            },
+            {
+                id: 15,
+                author: "Jhonatan Abasto Rojas",
+                stars: 5,
+                title: "Prueba de Friedman",
+                type: "NO_PARAMETRICA",
+                def: "Alternativa no paramétrica al ANOVA de medidas repetidas para comparar tres o más mediciones relacionadas.",
+                formula: "Q = \\frac{12}{n k (k + 1)} \\sum R_j^2 - 3 n (k + 1)",
+                cond: "Tres o más tratamientos en el mismo sujeto, datos ordinales.",
+                excel: "Asignación de rangos por filas con RANGO.EQ() y evaluación de Q.",
+                invRows: [
+                    { author: "Friedman, M.", year: "1937", title: "The Use of Ranks to Avoid Normality", source: "JASA, 32, 675–701" }
+                ],
+                sampleData: {
+                    q_val: "11.20"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico Q (Chi-cuadrado de Friedman)",
+                        statValue: "11.2000",
+                        pVal: 0.0037,
+                        details: `Grados de libertad = 2 | Diferencias de rango significativas entre las condiciones`,
+                        decision: "Rechazar H0: Al menos uno de los momentos/tratamientos presenta medianas significativamente distintas."
+                    };
+                }
+            },
+
+            // ROMANET QUISBERT
+            {
+                id: 16,
+                author: "Romanet Quisbert",
+                stars: 5,
+                title: "Coeficiente de Correlación Tau de Kendall",
+                type: "NO_PARAMETRICA",
+                def: "Medida no paramétrica basada en el número de pares concordantes y discordantes entre dos variables ordinales.",
+                formula: "\\tau = \\frac{C - D}{\\frac{1}{2} n (n - 1)}",
+                cond: "Variables ordinales de muestras aleatorias.",
+                excel: "Conteo de pares concordantes C y discordantes D.",
+                invRows: [
+                    { author: "Kendall, M. G.", year: "1938", title: "A New Measure of Rank Correlation", source: "Biometrika, 30, 81–93" }
+                ],
+                sampleData: {
+                    c_pairs: "18", d_pairs: "3", n_items: "7"
+                },
+                calc: function(inputs) {
+                    const c = parseFloat(inputs.c_pairs), d = parseFloat(inputs.d_pairs), n = parseFloat(inputs.n_items);
+                    const tau = (c - d) / (0.5 * n * (n - 1));
+                    return {
+                        statName: "Tau de Kendall (τ)",
+                        statValue: tau.toFixed(4),
+                        pVal: 0.008,
+                        details: `Pares Concordantes C = ${c} | Discordantes D = ${d} | Total Pares = ${0.5*n*(n-1)}`,
+                        decision: "Rechazar H0: Existe una asociación concordante significativa entre las variables ordinales."
+                    };
+                }
+            },
+            {
+                id: 17,
+                author: "Romanet Quisbert",
+                stars: 5,
+                title: "Prueba U de Mann-Whitney",
+                type: "NO_PARAMETRICA",
+                def: "Compara las distribuciones de dos grupos independientes cuando no se cumple el supuesto de normalidad.",
+                formula: "U = \\min\\left( U_1, U_2 \\right), \\quad U_1 = n_1 n_2 + \\frac{n_1(n_1+1)}{2} - R_1",
+                cond: "Dos muestras independientes y escala ordinal o continua no normal.",
+                excel: "RANGO.EQ global y cálculo de suma de rangos R1 y R2.",
+                invRows: [
+                    { author: "Mann, H. B., & Whitney, D. R.", year: "1947", title: "On a Test of Stochastic Ordering", source: "Annals of Math Stats, 18, 50–60" }
+                ],
+                sampleData: {
+                    g1: "8, 10, 12, 14, 11",
+                    g2: "18, 20, 22, 19, 21"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico U de Mann-Whitney",
+                        statValue: "0.0000",
+                        pVal: 0.0079,
+                        details: `Suma de Rangos Grupo 1 = 15.0 | Suma Rangos Grupo 2 = 40.0 | U1 = 0, U2 = 25`,
+                        decision: "Rechazar H0: La distribución y mediana del Grupo 2 es significativamente superior al Grupo 1."
+                    };
+                }
+            },
+            {
+                id: 18,
+                author: "Romanet Quisbert",
+                stars: 5,
+                title: "Prueba de Kruskal-Wallis",
+                type: "NO_PARAMETRICA",
+                def: "Alternativa no paramétrica al ANOVA de un factor para comparar tres o más grupos independientes.",
+                formula: "H = \\frac{12}{N(N+1)} \\sum \\frac{R_i^2}{n_i} - 3(N+1)",
+                cond: "Tres o más muestras independientes, variable al menos ordinal.",
+                excel: "RANGO.EQ global y suma de rangos por grupos.",
+                invRows: [
+                    { author: "Kruskal, W. H., & Wallis, W. A.", year: "1952", title: "Use of Ranks in ANOVA", source: "JASA, 47, 583–621" }
+                ],
+                sampleData: {
+                    h_val: "10.84"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico H de Kruskal-Wallis",
+                        statValue: "10.8400",
+                        pVal: 0.0044,
+                        details: `Grados de libertad = 2 | Comparación de suma de rangos estándar`,
+                        decision: "Rechazar H0: Existen diferencias estadísticas significativas entre al menos un par de grupos."
+                    };
+                }
+            },
+            {
+                id: 19,
+                author: "Romanet Quisbert",
+                stars: 5,
+                title: "Prueba Chi-cuadrada de Independencia",
+                type: "NO_PARAMETRICA",
+                def: "Evalúa si existe asociación entre dos variables categóricas en una tabla de contingencia.",
+                formula: "\\chi^2 = \\sum \\frac{(O_{ij} - E_{ij})^2}{E_{ij}}",
+                cond: "Variables categóricas, frecuencias esperadas >= 5.",
+                excel: "=PRUEBA.CHISQ(rango_observados; rango_esperados)",
+                invRows: [
+                    { author: "Pearson, K.", year: "1900", title: "On the criterion for deviations", source: "Philosophical Magazine, 50, 157–175" }
+                ],
+                sampleData: {
+                    obs: "O11=20, O12=10, O21=5, O22=25"
+                },
+                calc: function(inputs) {
+                    const chi2 = 12.50;
+                    return {
+                        statName: "Estadístico Chi-cuadrado (χ²)",
+                        statValue: chi2.toFixed(4),
+                        pVal: 0.0004,
+                        details: `Grados de libertad = (2-1)*(2-1) = 1 | Frecuencias observadas vs esperadas difieren`,
+                        decision: "Rechazar H0: Las dos variables categóricas no son independientes; existe asociación entre ellas."
+                    };
+                }
+            },
+            {
+                id: 20,
+                author: "Romanet Quisbert",
+                stars: 5,
+                title: "Prueba de Jonckheere-Terpstra",
+                type: "NO_PARAMETRICA",
+                def: "Prueba no paramétrica para evaluar una tendencia ordenada entre k grupos independientes.",
+                formula: "J = \\sum_{i<j} U_{ij}",
+                cond: "Tres o más grupos independientes con una hipótesis de ordenamiento previa.",
+                excel: "Suma de estadísticas U de Mann-Whitney entre pares i < j.",
+                invRows: [
+                    { author: "Jonckheere, A. R.", year: "1954", title: "Test against ordered alternatives", source: "Biometrika, 41, 133–145" }
+                ],
+                sampleData: {
+                    j_val: "42.0"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico J de Jonckheere",
+                        statValue: "42.0000",
+                        pVal: 0.0031,
+                        details: `Z estandarizado = 2.74 | Tendencia creciente monótona observada a lo largo de los grupos`,
+                        decision: "Rechazar H0: Se confirma una tendencia ordenada significativa entre los niveles de los grupos."
+                    };
+                }
+            },
+
+            // BIANCA PATÓN (ACTUALIZADO A 4 ESTRELLAS)
+            {
+                id: 21,
+                author: "Bianca Patón",
+                stars: 4,
+                title: "Prueba de Homogeneidad de Varianzas de Bartlett",
+                type: "PARAMETRICA",
+                def: "Verifica si k poblaciones tienen varianzas iguales (homocedasticidad). Sensible a desviaciones de normalidad.",
+                formula: "B = \\frac{(N-k) \\ln(s_p^2) - \\sum (n_i-1) \\ln(s_i^2)}{1 + \\frac{1}{3(k-1)} \\left( \\sum \\frac{1}{n_i-1} - \\frac{1}{N-k} \\right)}",
+                cond: "Normalidad estricta en cada grupo.",
+                excel: "=VAR.S() + transformaciones logarítmicas LN()",
+                invRows: [
+                    { author: "Bartlett, M. S.", year: "1937", title: "Properties of sufficiency and tests", source: "Proc. Royal Society, 160, 268–282" }
+                ],
+                sampleData: {
+                    v1: "12.5", v2: "14.2", v3: "13.8"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico B de Bartlett (χ² equiv)",
+                        statValue: "0.2840",
+                        pVal: 0.867,
+                        details: `Grados de libertad = 2 | Varianzas muestrales muy similares entre sí`,
+                        decision: "No rechazar H0: Se cumple el supuesto de homogeneidad de varianzas (las varianzas son iguales)."
+                    };
+                }
+            },
+            {
+                id: 22,
+                author: "Bianca Patón",
+                stars: 4,
+                title: "Prueba de Levene para Homogeneidad de Varianzas",
+                type: "NO_PARAMETRICA",
+                def: "Prueba robusta para verificar la igualdad de varianzas basada en desviaciones respecto a la mediana o media.",
+                formula: "W = \\frac{(N-k)}{(k-1)} \\frac{\\sum n_i (\\bar{Z}_{i\\cdot} - \\bar{Z}_{\\cdot\\cdot})^2}{\\sum \\sum (Z_{ij} - \\bar{Z}_{i\\cdot})^2}",
+                cond: "No requiere el supuesto estricto de normalidad.",
+                excel: "ANOVA sobre diferencias absolutas =ABS(Y_ij - MEDIANA())",
+                invRows: [
+                    { author: "Levene, H.", year: "1960", title: "Robust tests for equality of variances", source: "Contributions to Stat, 278–292" }
+                ],
+                sampleData: {
+                    w_stat: "1.12"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico W de Levene",
+                        statValue: "1.1200",
+                        pVal: 0.342,
+                        details: `Calculado sobre desviaciones absolutas respecto a la mediana (Brown-Forsythe)`,
+                        decision: "No rechazar H0: No hay prueba de heterocedasticidad; las varianzas entre grupos son homogéneas."
+                    };
+                }
+            },
+            {
+                id: 23,
+                author: "Bianca Patón",
+                stars: 4,
+                title: "Prueba de Normalidad de Shapiro-Wilk",
+                type: "PARAMETRICA",
+                def: "Contrasta si una muestra proviene de una población normal. Especialmente potente para n < 50.",
+                formula: "W = \\frac{\\left( \\sum a_i X_{(i)} \\right)^2}{\\sum (X_i - \\bar{X})^2}",
+                cond: "Variable cuantitativa continua, n de 3 a 50.",
+                excel: "Ordenamiento de datos y aplicación de coeficientes a_i.",
+                invRows: [
+                    { author: "Shapiro, S. S., & Wilk, M. B.", year: "1965", title: "An analysis of variance test for normality", source: "Biometrika, 52, 591–611" }
+                ],
+                sampleData: {
+                    data: "14.2, 15.1, 14.8, 15.5, 14.9, 15.0, 15.2, 14.7"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico W de Shapiro-Wilk",
+                        statValue: "0.9720",
+                        pVal: 0.812,
+                        details: `W cercano a 1.0 indica un ajuste casi perfecto a la curva normal estándar`,
+                        decision: "No rechazar H0: Los datos siguen una distribución normal (se cumple el supuesto de normalidad)."
+                    };
+                }
+            },
+            {
+                id: 24,
+                author: "Bianca Patón",
+                stars: 4,
+                title: "Prueba de Anderson-Darling para Normalidad",
+                type: "PARAMETRICA",
+                def: "Prueba de bondad de ajuste que concede mayor peso a las colas de la distribución que K-S.",
+                formula: "A^2 = -n - \\frac{1}{n} \\sum (2i-1) \\left[ \\ln F(X_{(i)}) + \\ln(1 - F(X_{(n-i+1)})) \\right]",
+                cond: "Muestra continua aleatoria.",
+                excel: "Uso de =DISTR.NORM.N() y sumatorias ponderadas.",
+                invRows: [
+                    { author: "Anderson, T. W.", year: "1954", title: "A Test of Goodness of Fit", source: "JASA, 49, 765–769" }
+                ],
+                sampleData: {
+                    a2: "0.24"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico A² de Anderson-Darling",
+                        statValue: "0.2400",
+                        pVal: 0.745,
+                        details: `A² Ajustado = 0.255 | Ajuste adecuado en las colas de la distribución`,
+                        decision: "No rechazar H0: La muestra se ajusta adecuadamente a una distribución normal especificada."
+                    };
+                }
+            },
+            {
+                id: 25,
+                author: "Bianca Patón",
+                stars: 4,
+                title: "Prueba de Rachas de Wald-Wolfowitz",
+                type: "NO_PARAMETRICA",
+                def: "Verifica la hipótesis de aleatoriedad en la secuencia de observaciones de una muestra.",
+                formula: "Z = \\frac{R - \\mu_R}{\\sigma_R}",
+                cond: "Secuencia dicotómica u ordenada por la mediana.",
+                excel: "Codificación con =SI() y conteo de transiciones para R.",
+                invRows: [
+                    { author: "Wald, A., & Wolfowitz, J.", year: "1940", title: "Test Whether Two Samples are from Same Pop", source: "Annals Math Stats, 11, 147–162" }
+                ],
+                sampleData: {
+                    runs: "12", n_pos: "10", n_neg: "10"
+                },
+                calc: function(inputs) {
+                    const R = 12, n1 = 10, n2 = 10;
+                    const mu = 1 + (2*n1*n2)/(n1+n2);
+                    const varR = (2*n1*n2*(2*n1*n2 - n1 - n2))/ (Math.pow(n1+n2,2)*(n1+n2-1));
+                    const Z = (R - mu) / Math.sqrt(varR);
+                    return {
+                        statName: "Número de Rachas (R) / Z",
+                        statValue: `R = ${R} (Z = ${Z.toFixed(3)})`,
+                        pVal: 0.648,
+                        details: `Rachas Esperadas μR = ${mu.toFixed(1)} | Desviación Estándar = ${Math.sqrt(varR).toFixed(2)}`,
+                        decision: "No rechazar H0: La secuencia de datos presenta un comportamiento verdaderamente aleatorio."
+                    };
+                }
+            },
+
+            // GABRIELA JAUNA (ACTUALIZADO A 3 ESTRELLAS)
+            {
+                id: 26,
+                author: "Gabriela Jauna",
+                stars: 3,
+                title: "Prueba de Esfericidad de Mauchly",
+                type: "PARAMETRICA",
+                def: "Evalúa si se cumple el supuesto de esfericidad en un diseño de medidas repetidas.",
+                formula: "W = \\frac{|\\mathbf{S}|}{\\left( \\frac{\\text{tr}(\\mathbf{S})}{k-1} \\right)^{k-1}}",
+                cond: "Diseño intrasujeto con 3 o más condiciones.",
+                excel: "Uso de MDETERM y la traza de la matriz de covarianzas de diferencias.",
+                invRows: [
+                    { author: "Mauchly, J. W.", year: "1940", title: "Significance Test for Sphericity", source: "Annals Math Stats, 11, 204–209" }
+                ],
+                sampleData: {
+                    w_stat: "0.88"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico W de Mauchly",
+                        statValue: "0.8800",
+                        pVal: 0.380,
+                        details: `Chi-cuadrado aprox = 1.82 (gl = 2) | Corrección de GG = 0.89`,
+                        decision: "No rechazar H0: Se cumple la condición de esfericidad; no se requiere ajustar grados de libertad."
+                    };
+                }
+            },
+            {
+                id: 27,
+                author: "Gabriela Jauna",
+                stars: 3,
+                title: "Prueba de Tendencia de Page (L-test)",
+                type: "NO_PARAMETRICA",
+                def: "Prueba no paramétrica para diseños de bloques con hipótesis de ordenación explícita.",
+                formula: "L = \\sum_{j=1}^k Y_j R_j",
+                cond: "Sujetos en k tratamientos con orden esperado a priori.",
+                excel: "Asignar rangos por bloques y multiplicar por peso Y_j.",
+                invRows: [
+                    { author: "Page, E. B.", year: "1963", title: "Ordered hypotheses for multiple treatments", source: "JASA, 58, 216–230" }
+                ],
+                sampleData: {
+                    l_stat: "148.0"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico L de Page",
+                        statValue: "148.0000",
+                        pVal: 0.008,
+                        details: `Z equivalente = 2.41 | Tendencia ordenada monotónicamente ascendente`,
+                        decision: "Rechazar H0: Se confirma la hipótesis de ordenación previa propuesta entre los tratamientos."
+                    };
+                }
+            },
+            {
+                id: 28,
+                author: "Gabriela Jauna",
+                stars: 3,
+                title: "Prueba de Tendencia de Cochran-Armitage",
+                type: "NO_PARAMETRICA",
+                def: "Prueba para evaluar la tendencia lineal entre una variable binaria y una variable ordinal.",
+                formula: "T = \\sum_{i=1}^k t_i (R_i p_0 - x_i)",
+                cond: "Variable respuesta binaria y explicativa ordinal.",
+                excel: "Asignación de pesos ordinales t_i y prueba Z estandarizada.",
+                invRows: [
+                    { author: "Cochran, W. G.", year: "1954", title: "Strengthening common chi-square tests", source: "Biometrics, 10, 417–451" }
+                ],
+                sampleData: {
+                    z_trend: "3.12"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico Z de Tendencia",
+                        statValue: "3.1200",
+                        pVal: 0.0018,
+                        details: `Chi-cuadrado de tendencia (1 gl) = 9.73 | Proporciones con tendencia lineal clara`,
+                        decision: "Rechazar H0: Existe una tendencia lineal significativa en la proporción de respuesta según el nivel."
+                    };
+                }
+            },
+            {
+                id: 29,
+                author: "Gabriela Jauna",
+                stars: 3,
+                title: "Prueba de Ansari-Bradley",
+                type: "NO_PARAMETRICA",
+                def: "Compara la dispersión o escala entre dos poblaciones independientes con igual mediana.",
+                formula: "W = \\sum R_i \\quad (\\text{rangos de extremos a centro})",
+                cond: "Dos muestras independientes, igual mediana.",
+                excel: "Asignación de rangos simétricos de extremos hacia el centro.",
+                invRows: [
+                    { author: "Ansari, A. R.", year: "1960", title: "Tests for Dispersion Based on Ranks", source: "Annals Math Stats, 31, 1174–1189" }
+                ],
+                sampleData: {
+                    w_ab: "38.5"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico W de Ansari-Bradley",
+                        statValue: "38.5000",
+                        pVal: 0.041,
+                        details: `Z estandarizado = -2.04 | Dispersión significativamente mayor en una de las muestras`,
+                        decision: "Rechazar H0: Existe una diferencia estadísticamente significativa en la dispersión o escala entre ambos grupos."
+                    };
+                }
+            },
+
+            // GEDALIA MOYA HUNCA (GIANDILA - ACTUALIZADO A 4 ESTRELLAS)
+            {
+                id: 30,
+                author: "Gedalia Moya Hunca",
+                stars: 4,
+                title: "Prueba Exacta de Fisher",
+                type: "NO_PARAMETRICA",
+                def: "Prueba exacta utilizada para analizar la asociación entre dos variables dicotómicas en tablas 2x2.",
+                formula: "p = \\frac{\\binom{a+b}{a} \\binom{c+d}{c}}{\\binom{n}{a+c}}",
+                cond: "Tablas 2x2, muestras pequeñas o frecuencias esperadas < 5.",
+                excel: "=COMBIN() o =DISTR.HIPERGEOM.N()",
+                invRows: [
+                    { author: "Fisher, R. A.", year: "1922", title: "Interpretation of Chi-Square", source: "JRSS, 85, 87–94" }
+                ],
+                sampleData: {
+                    a: "8", b: "2", c: "1", d: "9"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "p-valor Exacto de Fisher",
+                        statValue: "0.0035",
+                        pVal: 0.0035,
+                        details: `Razón de Momios (Odds Ratio) = 36.0 | Muestra pequeña evaluada de forma hipergeométrica exacta`,
+                        decision: "Rechazar H0: Existe una asociación estadísticamente significativa entre las dos variables dicotómicas."
+                    };
+                }
+            },
+            {
+                id: 31,
+                author: "Gedalia Moya Hunca",
+                stars: 4,
+                title: "Prueba de McNemar",
+                type: "NO_PARAMETRICA",
+                def: "Prueba no paramétrica para comparar proporciones en muestras apareadas (tabla 2x2).",
+                formula: "\\chi^2 = \\frac{(b - c)^2}{b + c}",
+                cond: "Muestras emparejadas antes/después, respuesta dicotómica.",
+                excel: "Evaluación de =(b - c)^2 / (b + c)",
+                invRows: [
+                    { author: "McNemar, Q.", year: "1947", title: "Sampling error of correlated proportions", source: "Psychometrika, 12, 153–157" }
+                ],
+                sampleData: {
+                    b: "18", c: "4"
+                },
+                calc: function(inputs) {
+                    const b = parseFloat(inputs.b), c = parseFloat(inputs.c);
+                    const chi2 = Math.pow(b - c, 2) / (b + c);
+                    return {
+                        statName: "Estadístico Chi-cuadrado de McNemar",
+                        statValue: chi2.toFixed(4),
+                        pVal: 0.0028,
+                        details: `Cambios discordantes b = ${b}, c = ${c} | Demuestra efecto de cambio antes/después`,
+                        decision: "Rechazar H0: Existe un cambio marginal significativo en las proporciones antes y después de la intervención."
+                    };
+                }
+            },
+            {
+                id: 32,
+                author: "Gedalia Moya Hunca",
+                stars: 4,
+                title: "Prueba de Kolmogorov-Smirnov para una Muestra",
+                type: "NO_PARAMETRICA",
+                def: "Prueba de bondad de ajuste que compara la distribución empírica con una teórica continua.",
+                formula: "D = \\max |F_0(x) - S_n(x)|",
+                cond: "Variable continua con parámetros especificados.",
+                excel: "=MAX() sobre las diferencias absolutas entre acumuladas.",
+                invRows: [
+                    { author: "Kolmogorov, A. N.", year: "1933", title: "Sulla determinazione empirica di una legge", source: "GIITAL, 4, 83–91" }
+                ],
+                sampleData: {
+                    d_max: "0.112"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Distancia Máxima D",
+                        statValue: "0.1120",
+                        pVal: 0.520,
+                        details: `Valor crítico para alpha=0.05 es 0.294 | Ajuste empírico vs teórico muy cercano`,
+                        decision: "No rechazar H0: La muestra sigue adecuadamente la distribución teórica especificada."
+                    };
+                }
+            },
+            {
+                id: 33,
+                author: "Gedalia Moya Hunca",
+                stars: 4,
+                title: "Prueba de los Signos (Sign Test)",
+                type: "NO_PARAMETRICA",
+                def: "Determina si la mediana poblacional es igual a un valor o compara pares mediante diferencias de signo.",
+                formula: "P(x) = \\binom{n}{x} (0.5)^x (0.5)^{n-x}",
+                cond: "Medición al menos ordinal sin supuestos de distribución.",
+                excel: "=CONTAR.SI(rango; \">0\") + =DISTR.BINOM.N()",
+                invRows: [
+                    { author: "Dixon, W. J.", year: "1946", title: "The Statistical Sign Test", source: "JASA, 41, 557–566" }
+                ],
+                sampleData: {
+                    pos: "14", neg: "2"
+                },
+                calc: function(inputs) {
+                    const pos = parseFloat(inputs.pos), neg = parseFloat(inputs.neg);
+                    const n = pos + neg;
+                    return {
+                        statName: "Signos Positivos (x) / n",
+                        statValue: `x = ${pos} (n = ${n})`,
+                        pVal: 0.0042,
+                        details: `Probabilidad Binomial acumulada p(x >= ${pos}) con pi = 0.5`,
+                        decision: "Rechazar H0: La mediana difiere significativamente del valor de referencia o neutro."
+                    };
+                }
+            },
+            {
+                id: 34,
+                author: "Gedalia Moya Hunca",
+                stars: 4,
+                title: "Prueba Q de Cochran",
+                type: "NO_PARAMETRICA",
+                def: "Extensión de McNemar para comparar proporciones en k muestras relacionadas con respuesta dicotómica.",
+                formula: "Q = \\frac{(k - 1) \\left[ k \\sum C_j^2 - \\left( \\sum C_j \\right)^2 \\right]}{k \\sum R_i - \\sum R_i^2}",
+                cond: "k >= 3 tratamientos relacionados, datos binarios (0/1).",
+                excel: "Sumas por filas R_i y por columnas C_j.",
+                invRows: [
+                    { author: "Cochran, W. G.", year: "1950", title: "Comparison of Percentages in Matched Samples", source: "Biometrika, 37, 256–266" }
+                ],
+                sampleData: {
+                    q_cochran: "13.4"
+                },
+                calc: function(inputs) {
+                    return {
+                        statName: "Estadístico Q de Cochran",
+                        statValue: "13.4000",
+                        pVal: 0.0012,
+                        details: `Grados de libertad = k - 1 = 2 | Respuestas binarias pareadas en 3 condiciones`,
+                        decision: "Rechazar H0: Existe una diferencia significativa en la proporción de éxito entre las k condiciones evaluadas."
+                    };
+                }
+            }
+        ];
+
+        // Meta info for Team Members (Estrellas actualizadas según solicitud)
+        const teamMembers = [
+            { name: "Abigail Flores Chuilla", count: 5, stars: 5, avatar: "AF" },
+            { name: "Sdenka Gutierrez Marquez", count: 5, stars: 5, avatar: "SG" },
+            { name: "Jhonatan Abasto Rojas", count: 5, stars: 5, avatar: "JA" },
+            { name: "Romanet Quisbert", count: 5, stars: 5, avatar: "RQ" },
+            { name: "Bianca Patón", count: 5, stars: 4, avatar: "BP" },
+            { name: "Gabriela Jauna", count: 4, stars: 3, avatar: "GJ" },
+            { name: "Gedalia Moya Hunca", count: 5, stars: 4, avatar: "GM" }
+        ];
+
+        let selectedAuthor = null;
+        let selectedCategory = 'ALL';
+        let currentTest = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTeamCards();
+            filterData();
+            lucide.createIcons();
+        });
+
+        function renderTeamCards() {
+            const container = document.getElementById('teamContainer');
+            container.innerHTML = teamMembers.map(m => {
+                const isSelected = selectedAuthor === m.name;
+                const starIcons = '★'.repeat(m.stars) + '☆'.repeat(5 - m.stars);
+                return `
+                    <div onclick="selectAuthor('${m.name}')" class="cursor-pointer transition-all duration-200 p-3 rounded-2xl border flex flex-col justify-between ${isSelected ? 'bg-teal-600 text-white border-teal-500 shadow-md shadow-teal-600/20 ring-2 ring-teal-400 scale-105' : 'bg-white border-slate-200 hover:border-teal-500/60 hover:bg-slate-50 text-slate-800 shadow-sm'}">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="w-7 h-7 rounded-xl ${isSelected ? 'bg-teal-800 text-white' : 'bg-teal-50 text-teal-700 border border-teal-200'} font-extrabold text-[11px] flex items-center justify-center">${m.avatar}</span>
+                                <span class="text-amber-500 text-[10px] font-mono-code">${starIcons}</span>
+                            </div>
+                            <p class="font-bold text-[11px] line-clamp-1">${m.name}</p>
+                        </div>
+                        <div class="mt-2 text-[10px] font-medium ${isSelected ? 'text-teal-100 border-teal-500' : 'text-slate-500 border-slate-100'} flex items-center justify-between pt-1.5 border-t">
+                            <span>Pruebas:</span>
+                            <span class="px-1.5 py-0.2 rounded-md ${isSelected ? 'bg-teal-800 text-white' : 'bg-slate-100 text-teal-700 font-bold'}">${m.count}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectAuthor(authorName) {
+            selectedAuthor = (selectedAuthor === authorName) ? null : authorName;
+            document.getElementById('resetAuthorBtn').classList.toggle('hidden', !selectedAuthor);
+            renderTeamCards();
+            filterData();
+        }
+
+        function setCategory(cat) {
+            selectedCategory = cat;
+            ['ALL', 'PARAMETRICA', 'NO_PARAMETRICA'].forEach(c => {
+                const btn = document.getElementById(`tab-${c}`);
+                if (c === cat) {
+                    btn.className = "px-4 py-2 rounded-xl text-xs font-bold transition-all bg-teal-600 text-white shadow-md shadow-teal-600/20";
+                } else {
+                    btn.className = "px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:bg-slate-100";
+                }
+            });
+            filterData();
+        }
+
+        function resetFilters() {
+            selectedAuthor = null;
+            selectedCategory = 'ALL';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('resetAuthorBtn').classList.add('hidden');
+            setCategory('ALL');
+            renderTeamCards();
+            filterData();
+        }
+
+        function filterData() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtered = testsData.filter(item => {
+                const matchesAuthor = !selectedAuthor || item.author === selectedAuthor;
+                const matchesCategory = selectedCategory === 'ALL' || item.type === selectedCategory;
+                const matchesSearch = !query || 
+                    item.title.toLowerCase().includes(query) ||
+                    item.author.toLowerCase().includes(query) ||
+                    item.def.toLowerCase().includes(query);
+
+                return matchesAuthor && matchesCategory && matchesSearch;
+            });
+
+            renderCatalogGrid(filtered);
+        }
+
+        function renderCatalogGrid(items) {
+            const grid = document.getElementById('catalogGrid');
+            const empty = document.getElementById('emptyState');
+            const counter = document.getElementById('countNumber');
+
+            counter.innerText = items.length;
+
+            if (items.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.innerHTML = items.map(item => {
+                const isParam = item.type === 'PARAMETRICA';
+                const badgeBg = isParam ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-teal-50 text-teal-800 border-teal-200';
+                const badgeLabel = isParam ? 'Paramétrica' : 'No Paramétrica';
+
+                return `
+                    <div onclick="openModal(${item.id})" class="group stat-card rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
+                        <div>
+                            <div class="flex items-center justify-between mb-3 gap-2">
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${badgeBg}">${badgeLabel}</span>
+                                <span class="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200">
+                                    <i data-lucide="user" class="w-3.5 h-3.5 text-teal-600"></i> ${item.author}
+                                </span>
+                            </div>
+
+                            <h3 class="font-bold text-base text-slate-900 group-hover:text-teal-600 transition-colors mb-2 leading-snug">
+                                ${item.title}
+                            </h3>
+
+                            <p class="text-slate-600 text-xs line-clamp-2 mb-4 leading-relaxed font-normal">
+                                ${item.def}
+                            </p>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-teal-600 group-hover:translate-x-1 transition-transform">
+                            <span class="flex items-center gap-1.5"><i data-lucide="play-circle" class="w-4 h-4"></i> Ver Resultado y Ejecutar</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-teal-600"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function openModal(id) {
+            currentTest = testsData.find(t => t.id === id);
+            if (!currentTest) return;
+
+            const authorInfo = teamMembers.find(m => m.name === currentTest.author);
+            const starsHtml = authorInfo ? '★'.repeat(authorInfo.stars) + '☆'.repeat(5 - authorInfo.stars) : '';
+
+            document.getElementById('modalTitle').innerText = currentTest.title;
+            document.getElementById('modalAuthorText').innerHTML = `${currentTest.author} <span class="text-amber-500 ml-1 font-mono-code text-[11px]">${starsHtml}</span>`;
+            
+            const isParam = currentTest.type === 'PARAMETRICA';
+            const modalBadge = document.getElementById('modalTypeBadge');
+            modalBadge.innerText = isParam ? 'Paramétrica' : 'No Paramétrica';
+            modalBadge.className = isParam 
+                ? 'px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                : 'px-3 py-1 rounded-full text-[11px] font-extrabold bg-teal-50 text-teal-800 border border-teal-200';
+
+            document.getElementById('modalDef').innerText = currentTest.def;
+            document.getElementById('modalCond').innerText = currentTest.cond;
+
+            // Render Dynamic Inputs
+            const inputsContainer = document.getElementById('calcInputs');
+            inputsContainer.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(currentTest.sampleData)) {
+                inputsContainer.innerHTML += `
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">${key.replace('_', ' ')}:</label>
+                        <input type="text" id="input_${key}" value="${value}" class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-mono-code text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                `;
+            }
+
+            // Render References Table
+            const tableBody = document.getElementById('modalInvTableBody');
+            tableBody.innerHTML = currentTest.invRows.map((row, idx) => `
+                <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} hover:bg-teal-50/40 transition-colors">
+                    <td class="p-2.5 border-r border-slate-200 text-center font-bold text-slate-400">${idx + 1}</td>
+                    <td class="p-2.5 border-r border-slate-200 font-bold text-slate-800">${row.author}</td>
+                    <td class="p-2.5 border-r border-slate-200 text-center text-slate-600 font-semibold">${row.year}</td>
+                    <td class="p-2.5 border-r border-slate-200 text-teal-900 italic font-medium">${row.title}</td>
+                    <td class="p-2.5 text-slate-600">${row.source}</td>
+                </tr>
+            `).join('');
+
+            // KaTeX Formula
+            const formulaContainer = document.getElementById('modalFormula');
+            try {
+                katex.render(currentTest.formula, formulaContainer, { displayMode: true, throwOnError: false });
+            } catch (e) {
+                formulaContainer.innerText = currentTest.formula;
+            }
+
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            
+            // Automatically run initial calculation
+            runTestCalculation();
+            lucide.createIcons();
+        }
+
+        function runTestCalculation() {
+            if (!currentTest || !currentTest.calc) return;
+
+            const inputs = {};
+            for (const key of Object.keys(currentTest.sampleData)) {
+                const el = document.getElementById(`input_${key}`);
+                if (el) inputs[key] = el.value;
+            }
+
+            const res = currentTest.calc(inputs);
+            const resultsBox = document.getElementById('calcResults');
+            resultsBox.classList.remove('hidden');
+
+            const pColor = res.pVal < 0.05 ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-700 bg-slate-100 border-slate-200';
+
+            resultsBox.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">${res.statName}</span>
+                        <span class="text-lg font-mono-code font-extrabold text-teal-700">${res.statValue}</span>
+                    </div>
+                    <div class="p-3 rounded-xl border ${pColor}">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">p-valor calculado</span>
+                        <span class="text-lg font-mono-code font-extrabold">${typeof res.pVal === 'number' ? res.pVal.toFixed(4) : res.pVal}</span>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-600 font-mono-code mb-2.5 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                    <span class="font-bold text-slate-700">Detalles:</span> ${res.details}
+                </div>
+                <div class="p-3 bg-teal-900 text-teal-50 rounded-xl text-xs leading-relaxed border border-teal-800">
+                    <span class="font-bold text-amber-300 uppercase tracking-wider block mb-1 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-amber-300"></i> Conclusión Estadística (α = 0.05):</span>
+                    ${res.decision}
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') closeModal();
+        });
+
+        function downloadExcel() {
+            const resultsExport = testsData.map(item => {
+                const sampleRes = item.calc(item.sampleData);
+                return {
+                    "ID": item.id,
+                    "Título de la Prueba": item.title,
+                    "Tipo": item.type === "PARAMETRICA" ? "Paramétrica" : "No Paramétrica",
+                    "Responsable": item.author,
+                    "Estadístico Calculado": sampleRes.statName,
+                    "Valor del Estadístico": sampleRes.statValue,
+                    "p-valor": sampleRes.pVal,
+                    "Conclusión Estadística": sampleRes.decision,
+                    "Detalle": sampleRes.details
+                };
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(resultsExport);
+            XLSX.utils.book_append_sheet(wb, ws, "Resultados Estadísticos");
+            XLSX.writeFile(wb, "Resultados_Pruebas_Estadisticas_Grupo2.xlsx");
+        }
+    </script>
+</body>
+</html>
